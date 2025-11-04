@@ -1,6 +1,3 @@
-console.log("Backend URL:", process.env.REACT_APP_BACKEND_URL);
-
-
 import { useEffect, useState } from "react";
 import axios from "axios";
 import {
@@ -28,29 +25,44 @@ export default function AdminDashboard() {
   const chartData =
     stats && stats.topMovies
       ? stats.topMovies.map((movie) => ({
-          movie: movie.title,
-          views: movie.views,
-        }))
+        movie: movie.title,
+        views: movie.views,
+      }))
       : [];
 
   useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get(
-          `${process.env.REACT_APP_BACKEND_URL}/api/admin/dashboard`
-
-        );
-        setStats(response.data);
+  const fetchDashboard = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      
+      if (!token) {
+        setError("No authentication token found. Please log in again.");
         setLoading(false);
-      } catch (error) {
-        console.error(error);
-        setError("Failed to load dashboard data.");
-        setLoading(false);
+        return;
       }
-    };
-    fetchDashboard();
-  }, []);
+
+      const response = await axios.get(
+        `${process.env.REACT_APP_BACKEND_URL}/api/admin/dashboard`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setStats(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error(error);
+      setError("Failed to load dashboard data.");
+      setLoading(false);
+    }
+  };
+
+  fetchDashboard();
+}, []);
+
 
   if (loading) {
     return (
@@ -89,7 +101,7 @@ export default function AdminDashboard() {
       }}
     >
       <Typography variant="h4" align="center" gutterBottom>
-         Movie Stream Admin Dashboard
+        Movie Stream Admin Dashboard
       </Typography>
 
       {/* Statistic Cards */}
@@ -138,7 +150,7 @@ export default function AdminDashboard() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {stats.recentlyViewed.length > 0 ? (
+                {stats?.recentlyViewed.length > 0 ? (
                   stats.recentlyViewed.map((view, index) => (
                     <TableRow key={index}>
                       <TableCell>{view.email}</TableCell>
