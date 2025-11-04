@@ -1,4 +1,41 @@
+import bcrypt from "bcrypt";
 import { db } from "../../config/db.js";
+
+// ---------------- CREATE USER (Admin Only) ----------------
+export const createUser = async (req, res) => {
+  const { fullName, email, password, role } = req.body;
+
+  if (!fullName || !email || !password) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  try {
+    // Check if email already exists
+    const [existing] = await db.promise().query("SELECT * FROM users WHERE email = ?", [email]);
+    if (existing.length > 0) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    // Hash the password before saving
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Insert user
+    await db
+      .promise()
+      .query(
+        "INSERT INTO users (fullname, email, password, role) VALUES (?, ?, ?, ?)",
+        [fullName, email, hashedPassword, role || "user"]
+      );
+
+    res.status(201).json({
+      success: true,
+      message: "User created successfully",
+    });
+  } catch (err) {
+    console.error("Error creating user:", err);
+    res.status(500).json({ message: "Error creating user", error: err.message });
+  }
+};
 
 // ---------------- FETCH ALL USERS ----------------
 export const getAllUsers = (req, res) => {

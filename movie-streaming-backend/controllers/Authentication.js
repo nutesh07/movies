@@ -80,3 +80,36 @@ export const login = async (request, response) => {
         response.status(500).json({message:"Error during login", error: err.message});
     }
 }
+
+// Admin - Create New User
+export const createUser = async (request, response) => {
+  const { fullName, email, password, role } = request.body;
+
+  if (!fullName || !email || !password) {
+    return response.status(400).json({ message: "All fields are required" });
+  }
+
+  try {
+    // Check if email already exists
+    const [existing] = await db.promise().query("SELECT * FROM users WHERE email = ?", [email]);
+    if (existing.length > 0) {
+      return response.status(400).json({ message: "User already exists" });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Insert new user
+    await db
+      .promise()
+      .query(
+        "INSERT INTO users (fullname, email, password, role) VALUES (?, ?, ?, ?)",
+        [fullName, email, hashedPassword, role || "user"]
+      );
+
+    response.json({ success: true, message: "User created successfully" });
+  } catch (err) {
+    console.error("Error creating user:", err);
+    response.status(500).json({ message: "Error creating user", error: err.message });
+  }
+};

@@ -1,9 +1,9 @@
 import { db } from "../../config/db.js";
 
-// CREATE MOVIE
+// ---------------- CREATE MOVIE ----------------
 export const createMovie = async (req, res) => {
   try {
-    const { title, description, release_date, trailer, created_by, poster } = req.body;
+    const { title, description, release_date, trailer, created_by, posters } = req.body;
 
     // Basic validation
     if (!title || !release_date || !created_by) {
@@ -13,17 +13,25 @@ export const createMovie = async (req, res) => {
     }
 
     const query = `
-      INSERT INTO movies (title, description, release_date, trailer, created_by, poster)
+      INSERT INTO movies (title, description, release_date, trailer, created_by, posters)
       VALUES (?, ?, ?, ?, ?, ?)
     `;
 
     const [result] = await db
       .promise()
-      .query(query, [title, description, release_date, trailer, created_by, poster]);
+      .query(query, [title, description, release_date, trailer, created_by, posters]);
 
     res.status(201).json({
       message: "Movie created successfully!",
-      movie: { id: result.insertId, title, description, release_date, trailer, created_by, poster },
+      movie: {
+        id: result.insertId,
+        title,
+        description,
+        release_date,
+        trailer,
+        created_by,
+        posters,
+      },
     });
   } catch (err) {
     console.error("Error creating movie:", err.message);
@@ -31,10 +39,12 @@ export const createMovie = async (req, res) => {
   }
 };
 
-// READ ALL MOVIES
+// ---------------- READ ALL MOVIES ----------------
 export const getMovies = async (req, res) => {
   try {
-    const [movies] = await db.promise().query("SELECT * FROM movies ORDER BY release_date DESC");
+    const [movies] = await db
+      .promise()
+      .query("SELECT * FROM movies ORDER BY release_date DESC");
 
     res.status(200).json({
       total: movies.length,
@@ -46,21 +56,21 @@ export const getMovies = async (req, res) => {
   }
 };
 
-// EDIT MOVIE
+// ---------------- EDIT MOVIE ----------------
 export const editMovie = async (req, res) => {
   try {
-    const { title, description, release_date, trailer, created_by, poster } = req.body;
+    const { title, description, release_date, trailer, created_by, posters } = req.body;
     const { id } = req.params;
 
     const query = `
       UPDATE movies
-      SET title=?, description=?, release_date=?, trailer=?, created_by=?, poster=?
+      SET title=?, description=?, release_date=?, trailer=?, created_by=?, posters=?
       WHERE id=?
     `;
 
     await db
       .promise()
-      .query(query, [title, description, release_date, trailer, created_by, poster, id]);
+      .query(query, [title, description, release_date, trailer, created_by, posters, id]);
 
     res.status(200).json({ message: "Movie updated successfully!" });
   } catch (err) {
@@ -69,7 +79,7 @@ export const editMovie = async (req, res) => {
   }
 };
 
-// DELETE MOVIE
+// ---------------- DELETE MOVIE ----------------
 export const deleteMovie = async (req, res) => {
   try {
     const { id } = req.params;
